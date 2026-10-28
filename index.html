@@ -606,6 +606,7 @@ var stage=document.getElementById('stage'), cv=document.getElementById('cv'), ct
 var loupe=document.getElementById('loupe'), lcv=document.getElementById('lcv'), lctx=lcv.getContext('2d');
 var cntEl=document.getElementById('cnt'), totEl=document.getElementById('tot'), scenEl=document.getElementById('scen'), hint=document.getElementById('hint'), verdict=document.getElementById('verdict');
 var img=new Image(); img.src='images/shingles.jpg';
+var userMoved=false;
 var W=0,H=0,dpr=1, base=null, full=null, view=null, sq={}, hits=[], scenario='light', found=0, done=false, lx=0, ly=0, dwell=null, ZOOM=2.6;
 var SC={ light:{n:3, need:3, label:"Last week's storm", seed:7}, heavy:{n:12, need:8, label:'A bad hailstorm', seed:41} };
 
@@ -683,7 +684,7 @@ function drawLoupe(){
   var g=lctx.createRadialGradient(L/2,L/2,L*0.3,L/2,L/2,L*0.52); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.4)');
   lctx.fillStyle=g; lctx.fillRect(0,0,L,L);
 }
-function placeLoupe(x,y){ lx=x; ly=y; loupe.style.transform='translate('+x+'px,'+y+'px)'; drawLoupe(); check(); }
+function placeLoupe(x,y){ lx=x; ly=y; loupe.style.transform='translate('+x+'px,'+y+'px)'; drawLoupe(); if(userMoved) check(); }
 
 var lastT=0;
 function check(){
@@ -701,7 +702,7 @@ function markFound(h){
   render();
   if(found>=SC[scenario].need && !done){ done=true; setTimeout(showVerdict, reduce?0:450); }
 }
-setInterval(function(){ if(dwell && !done) check(); }, 80);
+setInterval(function(){ if(dwell && !done && userMoved) check(); }, 80);
 
 function showVerdict(){
   hint.style.opacity=0;
@@ -727,14 +728,13 @@ document.getElementById('showAll').addEventListener('click',function(){ hits.for
 
 /* pointer */
 function rel(e){ var r=stage.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
-var userMoved=false;
 stage.addEventListener('pointermove',function(e){
   if(e.target.closest('.verdict')) return;
   var p=rel(e), off = e.pointerType==='touch' ? -70 : 0;
   userMoved=true; hint.style.opacity = done?0:(found? 0 : .0);
   placeLoupe(p.x, Math.max(0,p.y+off));
 });
-stage.addEventListener('pointerdown',function(e){ if(e.target.closest('.verdict')) return; if(e.pointerType==='touch'){ var p=rel(e); placeLoupe(p.x, Math.max(0,p.y-70)); } });
+stage.addEventListener('pointerdown',function(e){ if(e.target.closest('.verdict')) return; if(e.pointerType==='touch'){ userMoved=true; var p=rel(e); placeLoupe(p.x, Math.max(0,p.y-70)); } });
 
 /* idle drift so the loupe invites interaction */
 var t0=performance.now();
